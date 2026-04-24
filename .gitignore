@@ -2,3 +2,16 @@ __pycache__/
 *.py[cod]
 .venv/
 .DS_Store
+
+# Heavy data and generated artifacts
+Datasets/
+exercise_2/data/DIC-C2DH-HeLa/
+exercise_2/data/exc2_DIC-C2DH-HeLa.zip
+exercise_2/results/
+exercise_3/results/snapshots/
+exercise_4/data/exc4_covertype.zip
+exercise_4/data/covtype.data.gz
+
+# Generated docs PDFs
+docs/report.pdf
+docs/presentation_explanatory.pdf
