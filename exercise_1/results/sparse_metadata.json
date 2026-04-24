@@ -1,0 +1,35 @@
+[
+  {
+    "dataset": "SuiteSparse_plat362",
+    "archive": "plat362.tar.gz",
+    "matrix_market_member": "plat362/plat362.mtx",
+    "original_rows": 362,
+    "original_cols": 362,
+    "original_nnz": 3074,
+    "benchmark_size": 362,
+    "benchmark_nnz": 5786,
+    "symmetric_header": true
+  },
+  {
+    "dataset": "SuiteSparse_bcsstk13",
+    "archive": "bcsstk13.tar.gz",
+    "matrix_market_member": "bcsstk13/bcsstk13.mtx",
+    "original_rows": 2003,
+    "original_cols": 2003,
+    "original_nnz": 42943,
+    "benchmark_size": 700,
+    "benchmark_nnz": 17746,
+    "symmetric_header": true
+  },
+  {
+    "dataset": "SuiteSparse_west0479",
+    "archive": "west0479.tar.gz",
+    "matrix_market_member": "west0479/west0479.mtx",
+    "original_rows": 479,
+    "original_cols": 479,
+    "original_nnz": 1910,
+    "benchmark_size": 479,
+    "benchmark_nnz": 1910,
+    "symmetric_header": false
+  }
+]

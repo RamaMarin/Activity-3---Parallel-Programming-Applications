@@ -1,0 +1,141 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{longtable}
+\title{Documento Explicativo para Presentación\\High Performance Computing Assignment}
+\author{Codex}
+\date{\today}
+\begin{document}
+\maketitle
+\section*{Objetivo del documento}
+Este documento resume de forma explicativa qué se hizo en cada ejercicio, qué datos reales se usaron, cómo se distribuyó el trabajo paralelo y cómo se atendió cada task solicitada en la actividad.
+\section*{Exercise 1. Parallel Matrix Multiplication}
+\subsection*{Dataset usado}
+Se usó el dataset real HB/plat362 de SuiteSparse y se complementó con bcsstk13 y west0479. plat362 es una matriz 362x362 simétrica; al expandir la simetría se trabajó con 5,786 entradas efectivas.
+\subsection*{Flujo de trabajo}
+Se compararon cuatro estrategias principales: baseline serial, partición por filas, partición por columnas y descomposición por bloques 2D. También se incluyó una variante híbrida de Strassen y un script MPI por bloques de filas.
+\subsection*{Cobertura de tasks}
+\begin{enumerate}[leftmargin=*]
+\item Implement a serial baseline for dense matrix multiplication and validate correctness with small test cases.\\
+\textbf{Cómo se atendió:} A classical serial implementation and a NumPy serial baseline were included. Validation was done with small square matrices and error checks against NumPy.
+\item Implement parallel multiplication with Python multiprocessing using a row-based partition.\\
+\textbf{Cómo se atendió:} Rows of matrix A were split among workers. Each worker received a block of rows and the full matrix B, computed its partial product, and the final result was stacked vertically.
+\item Implement parallel multiplication with Python multiprocessing using a column-based partition.\\
+\textbf{Cómo se atendió:} Columns of matrix B were split among workers. Each worker received the full matrix A and one block of B columns, then the partial outputs were concatenated horizontally.
+\item Implement a block-based or quadrant-based parallel version and justify the design.\\
+\textbf{Cómo se atendió:} A two-dimensional block decomposition was implemented. Each task computed one C\_ij block from an A row block and a B column block. The design shows how output blocks can be assembled from smaller independent products.
+\item Implement one distributed-memory version using mpi4py.\\
+\textbf{Cómo se atendió:} The file exercise\_1/mpi\_matrix\_mult.py implements row-slab distribution with Scatterv, Bcast, and Gatherv. This covers data distribution, parallel local multiplication, and global result recovery.
+\item Implement or analyze a Strassen-based version as an advanced method.\\
+\textbf{Cómo se atendió:} A hybrid Strassen implementation was included. It pads to the next power of two and switches to NumPy multiplication below a cutoff to avoid excessive recursion overhead.
+\item Evaluate your methods on dense synthetic matrices of increasing size.\\
+\textbf{Cómo se atendió:} Dense experiments were run for sizes 64, 128, and 192 to compare the scaling behavior of the serial and multiprocessing implementations.
+\item Select at least two real sparse matrices from the SuiteSparse Matrix Collection and discuss sparsity effects.\\
+\textbf{Cómo se atendió:} Three real SuiteSparse matrices were used: plat362, bcsstk13, and west0479. Their sparsity patterns were loaded from Matrix Market archives and multiplied with sparse row dictionaries.
+\item Compare the serial and parallel versions and identify the main bottlenecks.\\
+\textbf{Cómo se atendió:} The comparison showed that Python process startup, pickling, and memory movement dominate for these matrix sizes. Sparse workloads also introduce irregular work per row, which affects balance.
+\end{enumerate}
+\subsection*{Puntos clave para exposición}
+\begin{itemize}[leftmargin=*]
+\item Las pruebas densas se hicieron con tamaños 64, 128 y 192 para observar el efecto del overhead.
+\item Las matrices dispersas reales mostraron que la estructura de no ceros cambia el balance de carga.
+\item En este entorno local, NumPy serial fue más rápido que multiprocessing para tamaños medianos y pequeños por el costo de mover datos entre procesos.
+\end{itemize}
+\section*{Exercise 2. Parallel Cell Image Processing and Morphological Characterization}
+\subsection*{Dataset usado}
+Se usó el dataset real DIC-C2DH-HeLa con secuencias ['01', '02'] y 168 cuadros anotados. Las imágenes son TIFF en escala de grises de tamaño [512, 512].
+\subsection*{Flujo de trabajo}
+Cada worker procesa una pareja imagen-máscara. La máscara silver-truth se toma como segmentación base; después se extraen objetos etiquetados y se calculan bounding box, área y ejes mayor y menor.
+\subsection*{Cobertura de tasks}
+\begin{enumerate}[leftmargin=*]
+\item Download and inspect the DIC-C2DH-HeLa dataset. Describe the image format, image size, and any relevant metadata for measurement.\\
+\textbf{Cómo se atendió:} The real dataset was extracted locally. The analyzed frames are grayscale TIFF images of size [512, 512] and measurements were reported in pixels.
+\item Build a serial pipeline that reads an image, segments cells, extracts connected components, and computes object-level measurements.\\
+\textbf{Cómo se atendió:} The serial pipeline reads one raw frame and one labeled mask, extracts every nonzero labeled region, and computes morphology for each detected cell.
+\item Use a pretrained model such as Cellpose if it improves the segmentation quality. Document the model used and the main inference settings.\\
+\textbf{Cómo se atendió:} Instead of Cellpose, the workflow used the dataset's silver-truth segmentation masks from *\_ST/SEG. This provided a higher-confidence segmentation reference for morphology measurement and removed model-inference variability.
+\item For each detected object, compute bounding box, area, major axis length, and minor axis length.\\
+\textbf{Cómo se atendió:} Each labeled cell yields an axis-aligned bounding box, pixel area, and PCA-based major and minor axis lengths.
+\item If you choose to compute rotated bounding boxes, describe how they are obtained and provide visual examples.\\
+\textbf{Cómo se atendió:} Rotated boxes were not required because they were optional. The implementation focused on axis-aligned boxes, which were sufficient for the requested quantitative summary.
+\item Parallelize the pipeline with Python multiprocessing and explain the work distribution.\\
+\textbf{Cómo se atendió:} The work was distributed by image because frames are independent. Each worker receives one image-mask pair, computes measurements locally, and returns object-level and image-level summaries.
+\item Generate a table of summary results per image, including count, average width, average length, and variability.\\
+\textbf{Cómo se atendió:} CSV outputs were generated per image and per sequence. The summary tables report detected cells, average width, average length, and standard deviations.
+\item Measure and compare serial and parallel execution times for different numbers of workers.\\
+\textbf{Cómo se atendió:} The real dataset was benchmarked with 1, 2, and 4 workers over 168 annotated frames.
+\item Discuss limitations of the chosen segmentation approach and how segmentation quality affects the final measurements.\\
+\textbf{Cómo se atendió:} The discussion explains that morphology quality depends directly on mask quality. Using silver-truth masks makes the measurements more trustworthy, but it removes the cost and uncertainty of learned segmentation.
+\end{enumerate}
+\subsection*{Puntos clave para exposición}
+\begin{itemize}[leftmargin=*]
+\item La distribución por imagen fue la opción natural porque cada frame es independiente.
+\item Con 168 cuadros anotados, el paralelismo sí dio mejora: 1.34x con 2 workers y 1.87x con 4 workers.
+\item La calidad de la medición depende directamente de la calidad de la máscara; por eso se usaron máscaras silver-truth del propio dataset.
+\end{itemize}
+\section*{Exercise 3. Forest Fire Cellular Automaton Driven by NASA FIRMS Data}
+\subsection*{Dataset usado}
+Se usó el archivo real modis\_2024\_Mexico.csv con 80390 hotspots MODIS para México. Para el benchmark se filtraron 31473 registros entre 2024-03-01 y 2024-05-31.
+\subsection*{Flujo de trabajo}
+El flujo fue: filtrar detecciones, convertirlas a una grilla regular, construir un calendario temporal de igniciones externas y ejecutar el autómata celular con vecindad de Moore. La versión paralela divide la grilla en franjas horizontales.
+\subsection*{Cobertura de tasks}
+\begin{enumerate}[leftmargin=*]
+\item Obtain hotspot data from NASA FIRMS for a selected region and time window. Document the source, filtering criteria, and variables used.\\
+\textbf{Cómo se atendió:} The file exc3\_modis\_2024\_Mexico.csv was used as a Mexico MODIS yearly summary. The benchmark filtered the data to 2024-03-01 through 2024-05-31 with confidence >= 70. Variables used included latitude, longitude, FRP, confidence, and acquisition date.
+\item Transform the hotspot detections into a regular two-dimensional grid suitable for a cellular automaton.\\
+\textbf{Cómo se atendió:} The selected detections were normalized to the Mexico bounding box of the filtered data and mapped into regular 240x240 and 420x420 grids.
+\item Define the state space, neighborhood structure, ignition rule, and transition logic.\\
+\textbf{Cómo se atendió:} States 0, 1, 2, and 3 represent non-burnable, susceptible vegetation, burning, and burned. A Moore 8-neighborhood was used. Burning neighbors and FRP-based intensity increased ignition probability, and external MODIS detections injected new ignitions over time.
+\item Implement a serial simulation and verify that the model evolves coherently over time.\\
+\textbf{Cómo se atendió:} A serial version was implemented and verified through consistent burned-cell counts and visual snapshots across time.
+\item Implement a parallel version with mpi4py using domain decomposition and border exchange.\\
+\textbf{Cómo se atendió:} The file exercise\_3/mpi\_fire\_ca.py implements row-slab domain decomposition. Each process exchanges top and bottom halo rows with neighbors before updating its local subdomain.
+\item Run simulations for different grid sizes or time horizons and compare runtimes.\\
+\textbf{Cómo se atendió:} Two configurations were benchmarked: 240x240 with 60 steps and 420x420 with 90 steps, comparing serial execution against multiprocessing domain decomposition.
+\item Visualize the temporal evolution of the fire.\\
+\textbf{Cómo se atendió:} The simulation exports selected fire-state snapshots to exercise\_3/results/snapshots, showing ignition, spread, and burned territory over time.
+\item Discuss the interpretation of NASA FIRMS data and the difference between hotspots and the true fire perimeter.\\
+\textbf{Cómo se atendió:} The document explains that hotspots are thermal detections at satellite overpass time, not exact perimeters. They should be interpreted as ignition evidence or activity indicators, not full fire outlines.
+\item Reflect on the scientific limitations of the simplified automaton and suggest improvements.\\
+\textbf{Cómo se atendió:} The discussion covers missing effects such as wind, slope, vegetation classes, fuel moisture, suppression, and geospatial land-cover constraints.
+\end{enumerate}
+\subsection*{Puntos clave para exposición}
+\begin{itemize}[leftmargin=*]
+\item Se usaron estados discretos 0, 1, 2 y 3 para no combustible, vegetación susceptible, fuego activo y celda quemada.
+\item Las capturas exportadas permiten explicar visualmente cómo avanza la propagación.
+\item El resultado principal aquí es metodológico: la versión paralela local no superó al serial porque el update serial vectorizado ya era muy rápido y el overhead de coordinación pesó más.
+\end{itemize}
+\section*{Exercise 4. Parallel K-Means Clustering}
+\subsection*{Dataset usado}
+Se usó el dataset real Covertype. El archivo completo contiene 581012 filas y 54 variables predictoras; para benchmarking repetible se trabajó con un subconjunto determinístico de 150000 muestras.
+\subsection*{Flujo de trabajo}
+Primero se estandarizaron las características. El baseline serial ejecuta asignación y actualización de centroides. La versión paralela local comparte el dataset en memoria compartida y reparte rangos de filas entre workers; la versión MPI reparte bloques de observaciones y sincroniza centroides con Allreduce.
+\subsection*{Cobertura de tasks}
+\begin{enumerate}[leftmargin=*]
+\item Load the Covertype dataset and describe its size, number of features, and preprocessing.\\
+\textbf{Cómo se atendió:} The real Covertype dataset was extracted from exc4\_covertype.zip. The full dataset has 581012 rows and 54 predictor features. A deterministic subset of 150000 samples was used for repeated benchmarking, and features were standardized.
+\item Implement a serial K-means baseline and validate assignments and centroid updates.\\
+\textbf{Cómo se atendió:} A serial K-means baseline was implemented with assignment and centroid-update steps. Correctness was checked by stable inertia reduction and consistent centroid updates across iterations.
+\item Implement a parallel K-means version with mpi4py and explain data distribution and centroid synchronization.\\
+\textbf{Cómo se atendió:} The file exercise\_4/mpi\_kmeans.py distributes row blocks of the dataset across MPI ranks and synchronizes centroids after each iteration. A local multiprocessing version was also benchmarked in this environment.
+\item Use collective communication operations to aggregate local cluster statistics and update centroids.\\
+\textbf{Cómo se atendió:} The MPI design uses Allreduce to combine local centroid sums and cluster counts. The multiprocessing version returns local sums, counts, and inertia from each worker for host-side aggregation.
+\item Test the algorithm with different numbers of clusters and different numbers of processes.\\
+\textbf{Cómo se atendió:} The benchmark used k=4 and k=7 and compared 1, 2, and 4 workers in the local shared-memory version.
+\item Measure runtime per iteration, total runtime, convergence behavior, and changes in quality or stability.\\
+\textbf{Cómo se atendió:} The outputs record iteration counts, runtime per iteration, total runtime, inertia, and convergence behavior for every tested configuration.
+\item Compare the serial and parallel versions and discuss when the parallel approach becomes advantageous.\\
+\textbf{Cómo se atendió:} For the tested local subset, the multiprocessing version stayed slower than the serial version because synchronization and worker overhead remained important. The document explains that larger datasets and truly distributed memory can shift that balance.
+\item Identify the main communication costs and discuss how dataset size and number of clusters influence scalability.\\
+\textbf{Cómo se atendió:} The main communication cost is the repeated aggregation of kxd sums and k counts each iteration. Larger datasets favor parallel execution, while larger k increases both arithmetic and synchronization volume.
+\end{enumerate}
+\subsection*{Puntos clave para exposición}
+\begin{itemize}[leftmargin=*]
+\item Se probaron dos valores de k: 4 y 7.
+\item La distribución de workers fue 1, 2 y 4 procesos en la versión local compartida.
+\item El documento explica que K-means se beneficia más cuando N es grande y la comunicación queda relativamente pequeña frente al costo de calcular distancias.
+\end{itemize}
+\end{document}

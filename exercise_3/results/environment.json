@@ -1,0 +1,31 @@
+{
+  "source": "Real MODIS 2024 Mexico hotspot CSV provided by the user.",
+  "total_hotspots": 80390,
+  "filtered_hotspots": 31473,
+  "filtering": {
+    "start_date": "2024-03-01",
+    "end_date": "2024-05-31",
+    "min_confidence": 70
+  },
+  "region": {
+    "lat_min": 14.6216,
+    "lat_max": 32.6357,
+    "lon_min": -116.7155,
+    "lon_max": -86.909
+  },
+  "date_min": "2024-03-01",
+  "date_max": "2024-05-31",
+  "states": {
+    "0": "non-burnable",
+    "1": "susceptible vegetation",
+    "2": "burning",
+    "3": "burned"
+  },
+  "neighborhood": "Moore 8-neighborhood",
+  "python": "3.12.13",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.3.5",
+  "pandas": "3.0.1",
+  "seed": 20260422,
+  "pid": 42692
+}

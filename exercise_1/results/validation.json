@@ -1,0 +1,4 @@
+{
+  "classical_vs_numpy_max_error": 1.7763568394002505e-15,
+  "strassen_vs_numpy_max_error": 5.329070518200751e-15
+}

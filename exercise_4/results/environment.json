@@ -1,0 +1,17 @@
+{
+  "source": "Real Covertype dataset from exc4_covertype.zip using a deterministic benchmark subset.",
+  "full_dataset_rows": 581012,
+  "samples": 150000,
+  "features": 54,
+  "cover_type_label_range": [
+    1,
+    7
+  ],
+  "preprocessing": "feature standardization to zero mean and unit variance",
+  "python": "3.12.13",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.3.5",
+  "pandas": "3.0.1",
+  "seed": 20260422,
+  "pid": 30312
+}
